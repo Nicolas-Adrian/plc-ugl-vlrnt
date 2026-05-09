@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Overlay Placar Valorant BO5</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="overlay-page" data-page="overlay">
+  <main class="app overlay-app">
+    <section class="stage overlay-stage" aria-label="Overlay do placar">
+      <div class="scoreboard" id="scoreboard">
+        <div class="team-panel team-panel-left">
+          <div class="team-glow"></div>
+          <div class="team-content">
+            <div class="logo-frame logo-left" aria-hidden="true">
+              <img id="leftLogoPreview" alt="">
+              <span id="leftLogoInitials">LD</span>
+            </div>
+
+            <div class="team-info team-info-left">
+              <strong id="leftNamePreview">LOUD</strong>
+              <span id="leftRecordPreview">1-2</span>
+            </div>
+
+            <div class="score-value" id="leftScorePreview">1</div>
+          </div>
+
+          <div class="series-row series-row-left" id="leftSeriesPreview" aria-label="Vitorias da equipe esquerda"></div>
+        </div>
+
+        <div class="round-panel">
+          <span class="round-label" id="roundPreview">ROUND 7</span>
+          <strong class="timer" id="timerPreview">2:00</strong>
+        </div>
+
+        <div class="team-panel team-panel-right">
+          <div class="team-glow"></div>
+          <div class="team-content">
+            <div class="score-value" id="rightScorePreview">5</div>
+
+            <div class="team-info team-info-right">
+              <strong id="rightNamePreview">C9</strong>
+              <span id="rightRecordPreview">1-2</span>
+            </div>
+
+            <div class="logo-frame logo-right" aria-hidden="true">
+              <img id="rightLogoPreview" alt="">
+              <span id="rightLogoInitials">C9</span>
+            </div>
+          </div>
+
+          <div class="series-row series-row-right" id="rightSeriesPreview" aria-label="Vitorias da equipe direita"></div>
+        </div>
+      </div>
+
+      <div class="spike-marker is-visible" id="spikeMarker" aria-hidden="true">
+        <span class="spike-eye"></span>
+      </div>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

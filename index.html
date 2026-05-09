@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Placar Valorant BO5</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="controller">
+  <main class="app">
+    <section class="stage" aria-label="Previa do placar">
+      <div class="scoreboard" id="scoreboard">
+        <div class="team-panel team-panel-left">
+          <div class="team-glow"></div>
+          <div class="team-content">
+            <div class="logo-frame logo-left" aria-hidden="true">
+              <img id="leftLogoPreview" alt="">
+              <span id="leftLogoInitials">LD</span>
+            </div>
+
+            <div class="team-info team-info-left">
+              <strong id="leftNamePreview">LOUD</strong>
+              <span id="leftRecordPreview">1-2</span>
+            </div>
+
+            <div class="score-value" id="leftScorePreview">1</div>
+          </div>
+
+          <div class="series-row series-row-left" id="leftSeriesPreview" aria-label="Vitorias da LOUD na serie"></div>
+        </div>
+
+        <div class="round-panel">
+          <span class="round-label" id="roundPreview">ROUND 7</span>
+          <strong class="timer" id="timerPreview">2:00</strong>
+        </div>
+
+        <div class="team-panel team-panel-right">
+          <div class="team-glow"></div>
+          <div class="team-content">
+            <div class="score-value" id="rightScorePreview">5</div>
+
+            <div class="team-info team-info-right">
+              <strong id="rightNamePreview">C9</strong>
+              <span id="rightRecordPreview">1-2</span>
+            </div>
+
+            <div class="logo-frame logo-right" aria-hidden="true">
+              <img id="rightLogoPreview" alt="">
+              <span id="rightLogoInitials">C9</span>
+            </div>
+          </div>
+
+          <div class="series-row series-row-right" id="rightSeriesPreview" aria-label="Vitorias da C9 na serie"></div>
+        </div>
+      </div>
+
+      <button class="spike-marker is-visible" id="spikeMarker" type="button" aria-label="Alternar indicador central">
+        <span class="spike-eye"></span>
+      </button>
+    </section>
+
+    <section class="control-panel" aria-label="Controles do placar">
+      <div class="control-header">
+        <h1>Placar BO5</h1>
+        <div class="header-actions">
+          <a class="ghost-link" href="overlay.html" target="_blank" rel="noreferrer">Abrir overlay</a>
+          <button class="ghost-button" id="resetButton" type="button">Restaurar</button>
+        </div>
+      </div>
+
+      <div class="control-grid">
+        <fieldset class="control-group">
+          <legend>Equipe esquerda</legend>
+
+          <label>
+            Nome
+            <input id="leftNameInput" type="text" value="LOUD" maxlength="12">
+          </label>
+
+          <label>
+            Logo
+            <input id="leftLogoInput" type="file" accept="image/*">
+          </label>
+
+          <div class="compact-grid">
+            <label>
+              Placar
+              <input id="leftScoreInput" type="number" value="1" min="0" max="99">
+            </label>
+
+            <label>
+              Serie
+              <input id="leftRecordInput" type="text" value="1-2" maxlength="5">
+            </label>
+          </div>
+
+          <label>
+            Vitorias BO5
+            <input id="leftSeriesInput" type="range" value="1" min="0" max="3">
+          </label>
+        </fieldset>
+
+        <fieldset class="control-group">
+          <legend>Partida</legend>
+
+          <div class="compact-grid">
+            <label>
+              Rodada
+              <input id="roundInput" type="number" value="7" min="1" max="99">
+            </label>
+
+            <label>
+              Tempo
+              <input id="timerInput" type="text" value="2:00" maxlength="5" inputmode="numeric">
+            </label>
+          </div>
+
+          <div class="button-row" aria-label="Controles do cronometro">
+            <button class="action-button action-button-primary" id="startTimerButton" type="button">Comecar</button>
+            <button class="action-button" id="pauseTimerButton" type="button">Pausar</button>
+            <button class="action-button" id="resetTimerButton" type="button">Resetar</button>
+          </div>
+
+          <label class="switch-row">
+            <span>Triangulo central</span>
+            <input id="spikeToggleInput" type="checkbox" checked>
+          </label>
+
+          <label>
+            Largura do overlay
+            <input id="scaleInput" type="range" value="100" min="70" max="120">
+          </label>
+        </fieldset>
+
+        <fieldset class="control-group">
+          <legend>Equipe direita</legend>
+
+          <label>
+            Nome
+            <input id="rightNameInput" type="text" value="C9" maxlength="12">
+          </label>
+
+          <label>
+            Logo
+            <input id="rightLogoInput" type="file" accept="image/*">
+          </label>
+
+          <div class="compact-grid">
+            <label>
+              Placar
+              <input id="rightScoreInput" type="number" value="5" min="0" max="99">
+            </label>
+
+            <label>
+              Serie
+              <input id="rightRecordInput" type="text" value="1-2" maxlength="5">
+            </label>
+          </div>
+
+          <label>
+            Vitorias BO5
+            <input id="rightSeriesInput" type="range" value="0" min="0" max="3">
+          </label>
+        </fieldset>
+      </div>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
