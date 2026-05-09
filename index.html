@@ -31,7 +31,6 @@
 
         <div class="round-panel">
           <span class="round-label" id="roundPreview">ROUND 7</span>
-          <strong class="timer" id="timerPreview">2:00</strong>
         </div>
 
         <div class="team-panel team-panel-right">
@@ -103,23 +102,10 @@
         <fieldset class="control-group">
           <legend>Partida</legend>
 
-          <div class="compact-grid">
-            <label>
-              Rodada
-              <input id="roundInput" type="number" value="7" min="1" max="99">
-            </label>
-
-            <label>
-              Tempo
-              <input id="timerInput" type="text" value="2:00" maxlength="5" inputmode="numeric">
-            </label>
-          </div>
-
-          <div class="button-row" aria-label="Controles do cronometro">
-            <button class="action-button action-button-primary" id="startTimerButton" type="button">Comecar</button>
-            <button class="action-button" id="pauseTimerButton" type="button">Pausar</button>
-            <button class="action-button" id="resetTimerButton" type="button">Resetar</button>
-          </div>
+          <label>
+            Rodada
+            <input id="roundInput" type="number" value="7" min="1" max="99">
+          </label>
 
           <label class="switch-row">
             <span>Triangulo central</span>
