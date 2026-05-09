@@ -13,17 +13,13 @@ const DEFAULT_STATE = {
   leftSeries: 1,
   rightSeries: 0,
   round: 7,
-  timerSeconds: 120,
-  timerStartSeconds: 120,
-  timerRunning: false,
-  timerEndAt: null,
-  timerVersion: "initial",
   showSpike: true,
   scale: 100,
   leftLogo: "",
   rightLogo: ""
 };
 
+const STATE_KEYS = Object.keys(DEFAULT_STATE);
 const isController = document.body.dataset.page === "controller";
 const channel = "BroadcastChannel" in window ? new BroadcastChannel(CHANNEL_NAME) : null;
 const pageProtocol = window.location ? window.location.protocol : "file:";
@@ -49,7 +45,6 @@ const elements = {
   leftSeriesPreview: document.querySelector("#leftSeriesPreview"),
   rightSeriesPreview: document.querySelector("#rightSeriesPreview"),
   roundPreview: document.querySelector("#roundPreview"),
-  timerPreview: document.querySelector("#timerPreview"),
   spikeMarker: document.querySelector("#spikeMarker"),
   leftNameInput: document.querySelector("#leftNameInput"),
   rightNameInput: document.querySelector("#rightNameInput"),
@@ -62,12 +57,8 @@ const elements = {
   leftSeriesInput: document.querySelector("#leftSeriesInput"),
   rightSeriesInput: document.querySelector("#rightSeriesInput"),
   roundInput: document.querySelector("#roundInput"),
-  timerInput: document.querySelector("#timerInput"),
   spikeToggleInput: document.querySelector("#spikeToggleInput"),
   scaleInput: document.querySelector("#scaleInput"),
-  startTimerButton: document.querySelector("#startTimerButton"),
-  pauseTimerButton: document.querySelector("#pauseTimerButton"),
-  resetTimerButton: document.querySelector("#resetTimerButton"),
   resetButton: document.querySelector("#resetButton")
 };
 
@@ -80,99 +71,46 @@ function clamp(value, min, max) {
   return Math.min(Math.max(number, min), max);
 }
 
-function parseTimer(value) {
-  const cleanValue = String(value || "").trim().replace(/[^\d:]/g, "");
+function pickScoreboardState(source = {}) {
+  const nextState = { ...DEFAULT_STATE };
 
-  if (!cleanValue) {
-    return 0;
-  }
+  STATE_KEYS.forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      nextState[key] = source[key];
+    }
+  });
 
-  if (cleanValue.includes(":")) {
-    const [minutes = "0", seconds = "0"] = cleanValue.split(":");
-    return clamp((Number(minutes) || 0) * 60 + (Number(seconds) || 0), 0, 5999);
-  }
-
-  const number = Number(cleanValue);
-  if (Number.isNaN(number)) {
-    return 0;
-  }
-
-  if (number <= 10) {
-    return clamp(number * 60, 0, 5999);
-  }
-
-  return clamp(number, 0, 5999);
+  return nextState;
 }
 
-function formatTimer(totalSeconds) {
-  const safeSeconds = clamp(Math.round(totalSeconds), 0, 5999);
-  const minutes = Math.floor(safeSeconds / 60);
-  const seconds = safeSeconds % 60;
-
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
-}
-
-function createTimerVersion() {
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
-function getCurrentTimerSeconds() {
-  if (!state.timerRunning || !state.timerEndAt) {
-    return clamp(state.timerSeconds, 0, 5999);
-  }
-
-  return clamp(Math.ceil((state.timerEndAt - Date.now()) / 1000), 0, 5999);
-}
-
-function getSyncedTimerSeconds(nextState) {
-  const seconds = clamp(nextState.timerSeconds, 0, 5999);
-
-  if (!nextState.timerRunning || !nextState.serverSavedAt || !nextState.serverNow) {
-    return seconds;
-  }
-
-  const elapsedSeconds = Math.max(
-    0,
-    Math.floor((Number(nextState.serverNow) - Number(nextState.serverSavedAt)) / 1000)
-  );
-
-  return clamp(seconds - elapsedSeconds, 0, 5999);
+function normalizeState(nextState) {
+  nextState.leftName = String(nextState.leftName || "").trim() || "LOUD";
+  nextState.rightName = String(nextState.rightName || "").trim() || "C9";
+  nextState.leftRecord = String(nextState.leftRecord || "");
+  nextState.rightRecord = String(nextState.rightRecord || "");
+  nextState.leftSeries = clamp(nextState.leftSeries, 0, 3);
+  nextState.rightSeries = clamp(nextState.rightSeries, 0, 3);
+  nextState.leftScore = clamp(nextState.leftScore, 0, 99);
+  nextState.rightScore = clamp(nextState.rightScore, 0, 99);
+  nextState.round = clamp(nextState.round, 1, 99);
+  nextState.scale = clamp(nextState.scale, 70, 120);
+  nextState.showSpike = Boolean(nextState.showSpike);
+  nextState.leftLogo = String(nextState.leftLogo || "");
+  nextState.rightLogo = String(nextState.rightLogo || "");
+  return nextState;
 }
 
 function loadStoredState() {
   try {
     const rawState = localStorage.getItem(STORAGE_KEY);
-    if (!rawState) {
-      return {};
-    }
-
-    return JSON.parse(rawState);
+    return rawState ? JSON.parse(rawState) : {};
   } catch (error) {
     console.warn("Nao foi possivel carregar o estado salvo.", error);
     return {};
   }
 }
 
-function createInitialState() {
-  const storedState = loadStoredState();
-  const nextState = { ...DEFAULT_STATE, ...storedState };
-
-  if ("timer" in storedState && !("timerSeconds" in storedState)) {
-    nextState.timerSeconds = parseTimer(storedState.timer);
-  }
-
-  if (!("timerStartSeconds" in storedState)) {
-    nextState.timerStartSeconds = nextState.timerSeconds;
-  }
-
-  nextState.timerRunning = false;
-  nextState.timerEndAt = null;
-  nextState.timerVersion = nextState.timerVersion || createTimerVersion();
-
-  return nextState;
-}
-
-const state = createInitialState();
+const state = normalizeState(pickScoreboardState(loadStoredState()));
 
 function initialsFromName(name) {
   const cleanName = name.trim();
@@ -236,30 +174,8 @@ function setLogo(side, source) {
   }
 }
 
-function refreshTimerRuntime() {
-  const seconds = getCurrentTimerSeconds();
-
-  if (state.timerRunning && seconds <= 0) {
-    state.timerRunning = false;
-    state.timerEndAt = null;
-  }
-
-  state.timerSeconds = seconds;
-  return seconds;
-}
-
 function render() {
-  state.leftName = state.leftName.trim() || "LOUD";
-  state.rightName = state.rightName.trim() || "C9";
-  state.leftSeries = clamp(state.leftSeries, 0, 3);
-  state.rightSeries = clamp(state.rightSeries, 0, 3);
-  state.leftScore = clamp(state.leftScore, 0, 99);
-  state.rightScore = clamp(state.rightScore, 0, 99);
-  state.round = clamp(state.round, 1, 99);
-  state.scale = clamp(state.scale, 70, 120);
-  state.timerStartSeconds = clamp(state.timerStartSeconds, 0, 5999);
-
-  const timerSeconds = refreshTimerRuntime();
+  normalizeState(state);
 
   setText(elements.leftNamePreview, state.leftName);
   setText(elements.rightNamePreview, state.rightName);
@@ -270,7 +186,6 @@ function render() {
   setText(elements.leftLogoInitials, initialsFromName(state.leftName));
   setText(elements.rightLogoInitials, initialsFromName(state.rightName));
   setText(elements.roundPreview, `ROUND ${state.round}`);
-  setText(elements.timerPreview, formatTimer(timerSeconds));
 
   if (elements.spikeMarker) {
     elements.spikeMarker.classList.toggle("is-visible", state.showSpike);
@@ -282,7 +197,6 @@ function render() {
   setLogo("right", state.rightLogo);
   renderSeries(elements.leftSeriesPreview, "left", state.leftSeries);
   renderSeries(elements.rightSeriesPreview, "right", state.rightSeries);
-  syncTimerControls();
 }
 
 function syncInputs() {
@@ -299,27 +213,8 @@ function syncInputs() {
   if (elements.leftSeriesInput) elements.leftSeriesInput.value = state.leftSeries;
   if (elements.rightSeriesInput) elements.rightSeriesInput.value = state.rightSeries;
   if (elements.roundInput) elements.roundInput.value = state.round;
-  if (elements.timerInput) elements.timerInput.value = formatTimer(state.timerSeconds);
   if (elements.spikeToggleInput) elements.spikeToggleInput.checked = state.showSpike;
   if (elements.scaleInput) elements.scaleInput.value = state.scale;
-}
-
-function syncTimerControls() {
-  if (!isController) {
-    return;
-  }
-
-  if (elements.timerInput && document.activeElement !== elements.timerInput) {
-    elements.timerInput.value = formatTimer(state.timerSeconds);
-  }
-
-  if (elements.startTimerButton) {
-    elements.startTimerButton.textContent = state.timerRunning ? "Rodando" : "Comecar";
-  }
-
-  if (elements.pauseTimerButton) {
-    elements.pauseTimerButton.disabled = !state.timerRunning;
-  }
 }
 
 function createAppsScriptUrl(parameters = {}) {
@@ -337,7 +232,7 @@ function requestAppsScriptState() {
     const script = document.createElement("script");
     const timeout = window.setTimeout(() => {
       cleanup();
-      reject(new Error("Tempo esgotado ao buscar estado do Apps Script."));
+      reject(new Error("Limite esgotado ao buscar estado do Apps Script."));
     }, 8000);
 
     function cleanup() {
@@ -376,9 +271,12 @@ function postAppsScriptState(payload) {
   });
 }
 
+function getPayload() {
+  return { ...pickScoreboardState(state), sourceId: CLIENT_ID };
+}
+
 function publishState() {
-  const { timerEndAt, serverNow, serverSavedAt, ...stateForSync } = state;
-  const payload = { ...stateForSync, timerSeconds: getCurrentTimerSeconds(), sourceId: CLIENT_ID };
+  const payload = getPayload();
 
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -416,33 +314,7 @@ function applyExternalState(nextState) {
     return;
   }
 
-  const preservedTimerSeconds = getCurrentTimerSeconds();
-  const preservedTimerEndAt = state.timerEndAt;
-  const preservedTimerRunning = state.timerRunning;
-  const currentTimerVersion = state.timerVersion;
-  const { sourceId, timerEndAt, serverNow, serverSavedAt, ...cleanState } = nextState;
-  const incomingTimerVersion = cleanState.timerVersion || "legacy";
-  const timerChanged = incomingTimerVersion !== currentTimerVersion;
-  const incomingTimerSeconds = getSyncedTimerSeconds({
-    ...cleanState,
-    serverNow,
-    serverSavedAt
-  });
-
-  Object.assign(state, DEFAULT_STATE, cleanState);
-
-  if (timerChanged) {
-    state.timerSeconds = incomingTimerSeconds;
-    state.timerRunning = Boolean(cleanState.timerRunning) && state.timerSeconds > 0;
-    state.timerEndAt = state.timerRunning ? Date.now() + state.timerSeconds * 1000 : null;
-    state.timerVersion = incomingTimerVersion;
-  } else {
-    state.timerSeconds = preservedTimerSeconds;
-    state.timerRunning = preservedTimerRunning && preservedTimerSeconds > 0;
-    state.timerEndAt = state.timerRunning ? preservedTimerEndAt : null;
-    state.timerVersion = currentTimerVersion;
-  }
-
+  Object.assign(state, normalizeState(pickScoreboardState(nextState)));
   render();
   syncInputs();
 }
@@ -491,47 +363,6 @@ function bindLogoInput(input, key) {
   });
 }
 
-function setTimerFromInput() {
-  const seconds = parseTimer(elements.timerInput.value);
-  state.timerRunning = false;
-  state.timerEndAt = null;
-  state.timerSeconds = seconds;
-  state.timerStartSeconds = seconds;
-  state.timerVersion = createTimerVersion();
-  updateAndPublish();
-}
-
-function startTimer() {
-  let seconds = getCurrentTimerSeconds();
-
-  if (seconds <= 0) {
-    seconds = state.timerStartSeconds || 120;
-  }
-
-  state.timerSeconds = seconds;
-  state.timerEndAt = Date.now() + seconds * 1000;
-  state.timerRunning = true;
-  state.timerVersion = createTimerVersion();
-  updateAndPublish();
-}
-
-function pauseTimer() {
-  state.timerSeconds = getCurrentTimerSeconds();
-  state.timerRunning = false;
-  state.timerEndAt = null;
-  state.timerVersion = createTimerVersion();
-  updateAndPublish();
-}
-
-function resetTimer() {
-  state.timerRunning = false;
-  state.timerEndAt = null;
-  state.timerSeconds = state.timerStartSeconds || 120;
-  state.timerVersion = createTimerVersion();
-  updateAndPublish();
-  syncInputs();
-}
-
 function bindControllerEvents() {
   bindTextInput(elements.leftNameInput, "leftName");
   bindTextInput(elements.rightNameInput, "rightName");
@@ -545,25 +376,6 @@ function bindControllerEvents() {
   bindNumberInput(elements.scaleInput, "scale", 70, 120);
   bindLogoInput(elements.leftLogoInput, "leftLogo");
   bindLogoInput(elements.rightLogoInput, "rightLogo");
-
-  if (elements.timerInput) {
-    elements.timerInput.addEventListener("input", setTimerFromInput);
-    elements.timerInput.addEventListener("blur", () => {
-      elements.timerInput.value = formatTimer(state.timerSeconds);
-    });
-  }
-
-  if (elements.startTimerButton) {
-    elements.startTimerButton.addEventListener("click", startTimer);
-  }
-
-  if (elements.pauseTimerButton) {
-    elements.pauseTimerButton.addEventListener("click", pauseTimer);
-  }
-
-  if (elements.resetTimerButton) {
-    elements.resetTimerButton.addEventListener("click", resetTimer);
-  }
 
   if (elements.spikeToggleInput) {
     elements.spikeToggleInput.addEventListener("change", () => {
@@ -652,7 +464,7 @@ function startServerSync() {
       try {
         applyExternalState(JSON.parse(event.data || "{}"));
       } catch (error) {
-        console.warn("Nao foi possivel ler a sincronizacao em tempo real.", error);
+        console.warn("Nao foi possivel ler a sincronizacao ao vivo.", error);
       }
     });
   }
@@ -669,16 +481,3 @@ if (isController) {
     publishState();
   }
 }
-
-setInterval(() => {
-  if (!state.timerRunning) {
-    return;
-  }
-
-  const wasRunning = state.timerRunning;
-  render();
-
-  if (isController && wasRunning && !state.timerRunning) {
-    publishState();
-  }
-}, 250);
