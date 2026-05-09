@@ -55,9 +55,9 @@ input {
 .scoreboard {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(250px, 1fr) 210px minmax(250px, 1fr);
+  grid-template-columns: minmax(250px, 1fr) 138px minmax(250px, 1fr);
   width: min(calc(100vw - 32px), var(--overlay-width));
-  min-height: 86px;
+  min-height: 72px;
   filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.42));
   transition: width 160ms ease;
 }
@@ -257,9 +257,10 @@ input {
   display: grid;
   place-items: center;
   align-content: center;
-  min-height: 86px;
-  margin: 0 -22px;
-  padding: 0 30px 9px;
+  align-self: start;
+  min-height: 42px;
+  margin: 0 -15px;
+  padding: 0 20px;
   isolation: isolate;
 }
 
@@ -284,17 +285,10 @@ input {
 
 .round-label {
   color: #aeb7c6;
-  font-size: 0.86rem;
+  font-size: 0.78rem;
   font-weight: 900;
-  letter-spacing: 0.18em;
-}
-
-.timer {
-  margin-top: 2px;
-  font-size: clamp(2.5rem, 4.8vw, 3.9rem);
-  font-weight: 950;
-  line-height: 0.92;
-  letter-spacing: 0;
+  letter-spacing: 0.16em;
+  line-height: 1;
 }
 
 .series-row {
@@ -341,7 +335,6 @@ input {
 .spike-marker:focus-visible,
 .ghost-button:focus-visible,
 .ghost-link:focus-visible,
-.action-button:focus-visible,
 input:focus-visible {
   outline: 2px solid var(--cyan);
   outline-offset: 4px;
@@ -349,7 +342,7 @@ input:focus-visible {
 
 .spike-marker {
   position: absolute;
-  top: 86px;
+  top: 48px;
   left: 50%;
   display: grid;
   place-items: center;
@@ -435,8 +428,7 @@ input:focus-visible {
 }
 
 .ghost-button,
-.ghost-link,
-.action-button {
+.ghost-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -451,8 +443,7 @@ input:focus-visible {
 }
 
 .ghost-button:hover,
-.ghost-link:hover,
-.action-button:hover {
+.ghost-link:hover {
   background: rgba(255, 255, 255, 0.13);
 }
 
@@ -524,36 +515,6 @@ input[type="range"] {
   accent-color: var(--cyan);
 }
 
-.button-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.action-button {
-  min-width: 0;
-  padding: 0 10px;
-  font-size: 0.78rem;
-  font-weight: 900;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.action-button-primary {
-  color: #061119;
-  background: var(--cyan);
-  border-color: transparent;
-}
-
-.action-button-primary:hover {
-  background: #70daf7;
-}
-
-.action-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.48;
-}
-
 .compact-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -605,7 +566,7 @@ input[type="range"] {
 
 @media (max-width: 900px) {
   .scoreboard {
-    grid-template-columns: minmax(150px, 1fr) 154px minmax(150px, 1fr);
+    grid-template-columns: minmax(150px, 1fr) 112px minmax(150px, 1fr);
   }
 
   .team-content {
@@ -635,17 +596,17 @@ input[type="range"] {
   }
 
   .round-panel {
-    min-height: 78px;
-    margin: 0 -18px;
-    padding-inline: 20px;
+    min-height: 38px;
+    margin: 0 -12px;
+    padding-inline: 14px;
   }
 
   .round-label {
-    font-size: 0.68rem;
+    font-size: 0.62rem;
   }
 
   .spike-marker {
-    top: 78px;
+    top: 44px;
   }
 
   .control-grid {
@@ -664,7 +625,7 @@ input[type="range"] {
   }
 
   .scoreboard {
-    grid-template-columns: minmax(108px, 1fr) 104px minmax(108px, 1fr);
+    grid-template-columns: minmax(108px, 1fr) 82px minmax(108px, 1fr);
     width: calc(100vw - 20px);
   }
 
@@ -715,13 +676,9 @@ input[type="range"] {
   }
 
   .round-panel {
-    min-height: 88px;
-    margin: 0 -14px;
-    padding: 0 14px 10px;
-  }
-
-  .timer {
-    font-size: 2.1rem;
+    min-height: 36px;
+    margin: 0 -10px;
+    padding: 0 10px;
   }
 
   .series-row {
@@ -738,7 +695,7 @@ input[type="range"] {
   }
 
   .spike-marker {
-    top: 91px;
+    top: 44px;
     width: 58px;
     height: 46px;
   }
