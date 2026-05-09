@@ -27,7 +27,7 @@ function sendJson(response, statusCode, payload) {
 }
 
 function broadcastState() {
-  const payload = `data: ${JSON.stringify({ ...(currentState || {}), serverNow: Date.now() })}\n\n`;
+  const payload = `data: ${JSON.stringify(currentState || {})}\n\n`;
 
   for (const client of clients) {
     client.write(payload);
@@ -51,15 +51,14 @@ const server = http.createServer((request, response) => {
   const url = new URL(request.url, `http://${host}:${port}`);
 
   if (url.pathname === "/state" && request.method === "GET") {
-    sendJson(response, 200, { ...(currentState || {}), serverNow: Date.now() });
+    sendJson(response, 200, currentState || {});
     return;
   }
 
   if (url.pathname === "/state" && request.method === "POST") {
     readRequestBody(request, (body) => {
       try {
-        currentState = { ...JSON.parse(body || "{}"), serverSavedAt: Date.now() };
-        delete currentState.serverNow;
+        currentState = JSON.parse(body || "{}");
         broadcastState();
         sendJson(response, 200, { ok: true });
       } catch (error) {
