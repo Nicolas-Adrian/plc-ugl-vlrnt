@@ -17,6 +17,7 @@ const DEFAULT_STATE = {
   timerStartSeconds: 120,
   timerRunning: false,
   timerEndAt: null,
+  timerVersion: "initial",
   showSpike: true,
   scale: 100,
   leftLogo: "",
@@ -111,12 +112,31 @@ function formatTimer(totalSeconds) {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
+function createTimerVersion() {
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 function getCurrentTimerSeconds() {
   if (!state.timerRunning || !state.timerEndAt) {
     return clamp(state.timerSeconds, 0, 5999);
   }
 
   return clamp(Math.ceil((state.timerEndAt - Date.now()) / 1000), 0, 5999);
+}
+
+function getSyncedTimerSeconds(nextState) {
+  const seconds = clamp(nextState.timerSeconds, 0, 5999);
+
+  if (!nextState.timerRunning || !nextState.serverSavedAt || !nextState.serverNow) {
+    return seconds;
+  }
+
+  const elapsedSeconds = Math.max(
+    0,
+    Math.floor((Number(nextState.serverNow) - Number(nextState.serverSavedAt)) / 1000)
+  );
+
+  return clamp(seconds - elapsedSeconds, 0, 5999);
 }
 
 function loadStoredState() {
@@ -144,6 +164,10 @@ function createInitialState() {
   if (!("timerStartSeconds" in storedState)) {
     nextState.timerStartSeconds = nextState.timerSeconds;
   }
+
+  nextState.timerRunning = false;
+  nextState.timerEndAt = null;
+  nextState.timerVersion = nextState.timerVersion || createTimerVersion();
 
   return nextState;
 }
@@ -353,7 +377,8 @@ function postAppsScriptState(payload) {
 }
 
 function publishState() {
-  const payload = { ...state, timerSeconds: getCurrentTimerSeconds(), sourceId: CLIENT_ID };
+  const { timerEndAt, serverNow, serverSavedAt, ...stateForSync } = state;
+  const payload = { ...stateForSync, timerSeconds: getCurrentTimerSeconds(), sourceId: CLIENT_ID };
 
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
@@ -391,8 +416,33 @@ function applyExternalState(nextState) {
     return;
   }
 
-  const { sourceId, ...cleanState } = nextState;
+  const preservedTimerSeconds = getCurrentTimerSeconds();
+  const preservedTimerEndAt = state.timerEndAt;
+  const preservedTimerRunning = state.timerRunning;
+  const currentTimerVersion = state.timerVersion;
+  const { sourceId, timerEndAt, serverNow, serverSavedAt, ...cleanState } = nextState;
+  const incomingTimerVersion = cleanState.timerVersion || "legacy";
+  const timerChanged = incomingTimerVersion !== currentTimerVersion;
+  const incomingTimerSeconds = getSyncedTimerSeconds({
+    ...cleanState,
+    serverNow,
+    serverSavedAt
+  });
+
   Object.assign(state, DEFAULT_STATE, cleanState);
+
+  if (timerChanged) {
+    state.timerSeconds = incomingTimerSeconds;
+    state.timerRunning = Boolean(cleanState.timerRunning) && state.timerSeconds > 0;
+    state.timerEndAt = state.timerRunning ? Date.now() + state.timerSeconds * 1000 : null;
+    state.timerVersion = incomingTimerVersion;
+  } else {
+    state.timerSeconds = preservedTimerSeconds;
+    state.timerRunning = preservedTimerRunning && preservedTimerSeconds > 0;
+    state.timerEndAt = state.timerRunning ? preservedTimerEndAt : null;
+    state.timerVersion = currentTimerVersion;
+  }
+
   render();
   syncInputs();
 }
@@ -447,6 +497,7 @@ function setTimerFromInput() {
   state.timerEndAt = null;
   state.timerSeconds = seconds;
   state.timerStartSeconds = seconds;
+  state.timerVersion = createTimerVersion();
   updateAndPublish();
 }
 
@@ -460,6 +511,7 @@ function startTimer() {
   state.timerSeconds = seconds;
   state.timerEndAt = Date.now() + seconds * 1000;
   state.timerRunning = true;
+  state.timerVersion = createTimerVersion();
   updateAndPublish();
 }
 
@@ -467,6 +519,7 @@ function pauseTimer() {
   state.timerSeconds = getCurrentTimerSeconds();
   state.timerRunning = false;
   state.timerEndAt = null;
+  state.timerVersion = createTimerVersion();
   updateAndPublish();
 }
 
@@ -474,6 +527,7 @@ function resetTimer() {
   state.timerRunning = false;
   state.timerEndAt = null;
   state.timerSeconds = state.timerStartSeconds || 120;
+  state.timerVersion = createTimerVersion();
   updateAndPublish();
   syncInputs();
 }
@@ -610,7 +664,10 @@ startServerSync();
 if (isController) {
   bindControllerEvents();
   syncInputs();
-  publishState();
+
+  if (!hasAppsScriptSync) {
+    publishState();
+  }
 }
 
 setInterval(() => {
